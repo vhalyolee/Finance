@@ -1,0 +1,136 @@
+\documentclass[12pt]{article}
+
+\topmargin 0.0cm
+\oddsidemargin 0.2cm
+\textwidth 16cm 
+\textheight 21cm
+\footskip 1.0cm
+
+\usepackage{amsfonts, amsmath}
+\usepackage{times, graphicx}
+
+\newenvironment{sciabstract}{%
+\begin{quote} \it}
+{\end{quote}}
+
+\title{A Simple SABR Based Aproximation for the Cross Smile Marking}
+
+\author{Nic Hutchings, Valerie Halyo, Almada Sergio}
+
+\begin{document}
+\baselineskip24pt
+\maketitle
+
+\begin{sciabstract}
+      A simple approximation of the  cross smile formulation is described in terms of SABR parameters.
+      The resulting cross smile SABR paramters are composed of 2 terms, the first term  solely depends on the diagonal
+      SABR model dynamics and the second term  is evaluated by either calibrating to the market cross smile or using
+      historical correlation data. Each one of these options correspond to a different use case and strategy that is implemented
+      in the GUI. The first case corresponds to liquid cross currency pairs implemented in the marked strategy and the second is described
+      in historical correlation strategy.
+      
+
+\end{sciabstract}
+
+\section{Model Set Up}
+\paragraph*{}
+Consider a collection of log-normal SABR models with dynamics,
+$$dS_{i,t} = \alpha_{i,t}S_{i,t}dW_{i,t},$$
+$$d\alpha_{i,t} = \nu_i\alpha_{i,t}dZ_{i,t},$$
+where ${\bf E}[dW_{i,t}dZ_{i,t}] = \rho_idt$ with $i = 1,2,X.$ $\rho_i$ and $\nu_i$ represent the spot-volatility correlation and volatility of volatility respectively within each SABR model. Each dynamic for pair $i$ is written in its respective {\it domestic} measure.
+
+\section{Cross Smile Volatility, $\alpha_X$}
+\paragraph*{}
+Now consider a cross FX rate defined through, either $S_{X,t} = S_{1,t}S_{2,t}$ or   $S_{X,t} = \frac{S_{1,t}}{S_{2,t}}$,  
+We follow the exact same methodology to derive the cross smile SABR parameters in both cases and since the results differ only in a sign flip
+in 3 places we describe the derivation for  $S_{X,t} = S_{1,t}S_{2,t}$ and provide a generic form of the final result.
+
+we can write,
+$$dS_{X,t} = S_{1,t}dS_{2,t} + S_{2,t}dS_{1,t} + dS_{1,t}dS_{2,t}.$$
+Inserting terms and including the drift adjustment required to move to the X-domestic measure,
+\begin{equation}
+  \begin{split}
+    dS_{X,t} &= \alpha_{X,t}S_{X,t}dW_{2,t} + \alpha_{1,t}S_{X,t}dW_{1,t} + \alpha_{1,t}\alpha_{2,t}S_{X,t}\rho_{S_1,S_2}dt - \alpha_{1,t}\alpha_{2,t}S_{X,t}\rho_{S_1,S_2}dt \\
+    &= \alpha_{1,t}S_{X,t}dW_{1,t} + \alpha_{2,t}S_{X,t}dW_{2,t}.
+  \end{split}
+\end{equation}
+
+We know that we also have,
+\begin{equation}
+  dS_{X,t} = \alpha_{X,t}S_{X,t}dW_{X,t}.
+\end{equation}
+Equating the variance of both expressions for $dS_{X,t}$, leads to the well-known triangle relationship in FX,
+\begin{equation}
+  \alpha^2_{X,t} = \alpha^2_{1,t} + \alpha^2_{2,t} \pm 2\rho_{S_1,S_2}\alpha_{1,t}\alpha_{2,t}.
+\end{equation}
+
+Here the positive sign is for the $S_{X,t} = S_{1,t}S_{2,t}$ case and the negative sign is for the $S_{X,t} = \frac{S_{1,t}}{S_{2,t}}$ case.
+
+The correlation between spots $S_1$ and $S_2$ $\rho_{S_1,S_2}$ is evaulated using .
+
+\begin{equation}
+  \rho_{S_1,S_2} = \pm \frac{\text{atm}^2_{X,t} - \text{atm}^2_{1,t} - \text{atm}^2_{2,t} } { 2\text{atm}_{1,t}\text{atm}_{2,t}}.
+\end{equation}
+
+Note for most corss FX pairs the ATM volatility is reasonably observable, which should give a reasonable first approximation to $\alpha_X$.
+
+
+\section{Cross Smile Volatility of Volatitlity, $\nu_X$}
+\paragraph*{}
+Now differentiating expression (3) leads to,
+\begin{multline}
+  2\alpha_{1,t}d\alpha_{1,t} + (d\alpha_{X,t})^2 = 2d\alpha_{1,t}(\alpha_{1,t} + \rho_{S_1,S_2}\alpha_{2,t}) + 2d\alpha_{2,t}(\alpha_{2,t} + \rho_{S_1,S_2}\alpha_{1,t}) \\
+  + (d\alpha_{1,t})^2 + (d\alpha_{2,t})^2 + 2\rho_{S_1,S_2}d\alpha_{1,t}d\alpha_{2,t}
+\end{multline}
+
+matching drifts on both sides and remembering to incorporate the drift adjustments required to switch to the X-domestic meausre in the pair 2 processes, we have,
+\begin{multline}
+  \nu^2_X\alpha^2_{X,t} = \nu^2_1\alpha^2_{1,t} + \nu^2_2\alpha^2_{2,t} + 2\nu_1\nu_2\alpha_{1,t}\alpha_{2,t}\rho_{S_1,S_2}\rho_{\alpha_{1,t},\alpha_{2,t}} - 2\nu_2\alpha_{1,t}\rho_{S_1,S_2}\alpha_{2,t}(\alpha_{2,t} + \rho_{S_1,S_2}\alpha_{1,t}), \\ \\
+  \nu^2_X = \frac{\nu^2_1\alpha^2_{1,t} + \nu^2_2\alpha^2_{2,t}}{\alpha^2_{X,t}} +
+  \frac{2\alpha_{1,t}\alpha_{2,t}\rho_{S_1,S_2}\nu_2(\pm\nu_1\rho_{\alpha_{1,t},\alpha_{2,t}} - \rho_2(\alpha_{2,t} \pm \rho_{S_1,S_2}\alpha_{1,t})}{\alpha^2_{X,t}}
+\end{multline}
+
+We have derived an expression for the cross volatility of volatility in terms of parameters calibrated to the diagonal smiles and an extra term
+that could be evaluated by calibrating it to the cross market smile  or by extracting historical correlation data.
+
+
+%correlation parameter $\rho_{\alpha_{1,t},\alpha_{2,t}}$, the correlation between the two diagonal volatility processes and the cross colatility $\alpha_{X,t}$. It would seem reasonable to assume a high value for the volatility-volatility correlation. 
+
+\section{Cross Smile Volatility-Spot correlation , $\rho_X$}
+
+To complete the cross smile paramter set we first rewrite equation(4) as
+
+\begin{equation}
+  \frac{d \alpha_{X,t}}{\alpha_{X,t}} = \omega_{+}(\alpha_{1,t},\alpha_{2,t},\alpha_{X,t}) \frac{d \alpha_{1,t}}{\alpha_{1,t}} + \omega_{-}(\alpha_{1,t},\alpha_{2,t},\alpha_{X,t}) \frac{d \alpha_{2,t}}{\alpha_{2,t}} + (.)dt
+\end{equation}
+
+where the functions $\omega_{\pm}(.)$ are given by ,
+
+\begin{equation}
+\omega_{\pm} (\alpha_{1,t},\alpha_{2,t},\alpha_{X,t})  = \frac{1}{2} (1 \pm \frac{\alpha^2_{1,t} - \alpha^2_{2,t}}{\alpha^2_{X,t}})
+\end{equation}
+
+Evaluating the expression for $Cov[\frac{dS_X}{S_X},\frac{d \alpha_{X,t}}{\alpha_{X,t}}]$
+
+\begin{equation}
+Cov[\frac{dS_X}{S_X},\frac{d \alpha_{X,t}}{\alpha_{X,t}}] = Cov[\frac{dS_1}{S_1}+\frac{dS_2}{S_2},\omega_{+}(\alpha_{1,t},\alpha_{2,t},\alpha_{X,t}) \frac{d \alpha_{1,t}}{\alpha_{1,t}} + \omega_{-}(\alpha_{1,t},\alpha_{2,t},\alpha_{X,t}) \frac{d \alpha_{2,t}}{\alpha_{2,t}}].
+\end{equation}
+
+We make the approximation of assuming the $\omega_{\pm}(.)$ are constant, which lead to 
+
+\begin{multline}
+  \rho_{X}  \approx \frac{\rho_{1} \nu_{1} \alpha_{1} \omega_{+}(\alpha_{1,t},\alpha_{2,t},\alpha_{X,t}) +\rho_{2} \nu_{2} \alpha_{2} \omega_{-}(\alpha_{1,t},\alpha_{2,t},\alpha_{X,t}) }{\alpha_{X} \nu_{X}}  \\   + \frac{ \rho_{1} \nu_{1} \alpha_{1} \omega_{+}(\alpha_{1,t},\alpha_{2,t},\alpha_{X,t}) +  \rho_{2} \nu_{2} \alpha_{2} \omega_{-}(\alpha_{1,t},\alpha_{2,t},\alpha_{X,t}) }{\alpha_{X} \nu_{X}}.
+\end{multline}
+
+\section{Resultant Cross Smile SABR Parametrization }
+
+
+\begin{alignat}{3}
+ &\nu^2_X && \approx & \frac{\nu^2_1\alpha^2_{1,t} + \nu^2_2\alpha^2_{2,t}}{\alpha^2_{X,t}} \qquad \qquad \qquad \qquad \qquad \qquad \qquad \qquad  + \Delta_{\nu} &, \\
+ &\rho_{X} && \approx &\qquad  \frac{\rho_{1} \nu_{1} \alpha_{1} \omega_{+}(\alpha_{1,t},\alpha_{2,t},\alpha_{X,t}) +\rho_{2} \nu_{2} \alpha_{2} \omega_{-}(\alpha_{1,t},\alpha_{2,t},\alpha_{X,t}) }{\alpha_{X} \nu_{X}}  + \Delta_{\rho} &
+\end{alignat}
+
+
+
+
+\end{document}
